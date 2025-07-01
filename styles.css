@@ -1,0 +1,431 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    text-align: center;
+}
+
+header {
+    margin-bottom: 40px;
+}
+
+h1 {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.status {
+    color: white;
+    font-size: 1rem;
+    opacity: 0.9;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+    margin-bottom: 10px;
+}
+
+.archive-counter {
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    padding: 4px 12px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 15px;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.ai-button {
+    background: rgba(255,255,255,0.95);
+    border: none;
+    border-radius: 20px;
+    padding: 30px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.ai-button:active {
+    transform: translateY(0);
+}
+
+.ai-button.recording {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.ai-button.processing {
+    background: linear-gradient(135deg, #feca57, #ff9ff3);
+    color: white;
+}
+
+.ai-button.speaking {
+    background: linear-gradient(135deg, #48dbfb, #0abde3);
+    color: white;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.button-number {
+    display: block;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.button-label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.settings-toggle {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 25px;
+    padding: 12px 24px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.settings-toggle:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+}
+
+.settings-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.bot-config {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.bot-config h4 {
+    margin-bottom: 15px;
+    color: #495057;
+    font-size: 1.1rem;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#saveSettings {
+    background: #667eea;
+    color: white;
+}
+
+#saveSettings:hover {
+    background: #5a6fd8;
+}
+
+#resetSettings {
+    background: #6c757d;
+    color: white;
+}
+
+#resetSettings:hover {
+    background: #5a6268;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .button-grid {
+        gap: 15px;
+    }
+    
+    .ai-button {
+        padding: 25px 15px;
+    }
+    
+    .button-number {
+        font-size: 2.5rem;
+    }
+    
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        padding: 15px 20px;
+        flex-direction: column;
+    }
+    
+    .modal-footer button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .button-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .ai-button {
+        padding: 30px 20px;
+    }
+    
+    .button-number {
+        font-size: 3rem;
+    }
+}
+
+/* Debug Log Styles */
+.debug-section {
+    margin-top: 30px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.debug-section details {
+    color: white;
+}
+
+.debug-section summary {
+    cursor: pointer;
+    font-weight: 500;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    transition: background 0.3s ease;
+}
+
+.debug-section summary:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.debug-logs {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    max-height: 200px;
+    overflow-y: auto;
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.debug-logs .log-entry {
+    margin-bottom: 5px;
+    padding: 2px 0;
+}
+
+.debug-logs .log-timestamp {
+    color: #888;
+    font-size: 10px;
+}
+
+.debug-logs .log-message {
+    color: #e0e0e0;
+}
+
+.debug-logs .log-error {
+    color: #ff6b6b;
+}
+
+.debug-logs .log-success {
+    color: #51cf66;
+}
+
+.debug-logs .log-info {
+    color: #74c0fc;
+}
+
+.clear-logs-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.clear-logs-btn:hover {
+    background: rgba(255,255,255,0.3);
+} 
