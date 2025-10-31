@@ -68,10 +68,22 @@ class AphorismEcho {
                     e.stopPropagation();
                     this.log(`Button ${button.dataset.bot} released`, 'info');
                     
+                    const botId = button.dataset.bot;
+                    
                     // Keep pressed state briefly, then handle action
                     setTimeout(() => {
                         button.classList.remove('pressed');
-                        this.handleBotClick(e);
+                        this.log(`Handling bot ${botId} click`, 'info');
+                        
+                        if (this.isRecording && this.currentBot === botId) {
+                            this.log(`Stopping recording for bot ${botId}`, 'info');
+                            this.stopRecording();
+                        } else if (!this.isRecording) {
+                            this.log(`Starting recording for bot ${botId}`, 'info');
+                            this.startRecording(botId, button);
+                        } else {
+                            this.log(`Different bot is recording: ${this.currentBot}`, 'warning');
+                        }
                     }, 100);
                 }, { passive: false });
                 
@@ -179,12 +191,16 @@ class AphorismEcho {
         const button = event.currentTarget;
         const botId = button.dataset.bot;
         
+        this.log(`handleBotClick called for bot ${botId}`, 'info');
+        
         if (this.isRecording && this.currentBot === botId) {
-            // Stop recording immediately
+            this.log(`Stopping recording for bot ${botId}`, 'info');
             this.stopRecording();
         } else if (!this.isRecording) {
-            // Start recording immediately
+            this.log(`Starting recording for bot ${botId}`, 'info');
             this.startRecording(botId, button);
+        } else {
+            this.log(`Different bot ${this.currentBot} is recording`, 'warning');
         }
     }
     

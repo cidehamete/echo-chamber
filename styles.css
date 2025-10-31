@@ -390,9 +390,15 @@ h1 {
         overflow: hidden;
     }
     
-    /* Hide debug section on mobile to save space */
+    /* Show debug section on mobile for troubleshooting */
     .debug-section {
-        display: none;
+        margin-top: 10px;
+        padding: 10px;
+    }
+    
+    .debug-logs {
+        max-height: 150px;
+        font-size: 10px;
     }
     
     header {
@@ -607,6 +613,10 @@ h1 {
 
 .debug-logs .log-info {
     color: #74c0fc;
+}
+
+.debug-logs .log-warning {
+    color: #ffa94d;
 }
 
 .clear-logs-btn {
