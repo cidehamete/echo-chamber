@@ -8,6 +8,8 @@ class AphorismEcho {
         this.audioContext = null;
         this.audioQueue = [];
         this.isPlaying = false;
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        this.audioContextInitialized = false;
         
         this.init();
     }
@@ -17,13 +19,54 @@ class AphorismEcho {
         this.renderBotConfigs();
         this.updateStatus('Ready');
         this.updateArchiveCounter();
-        this.log('Aphorism Echo initialized', 'info');
+        this.initializeAudioContext();
+        this.log(`Aphorism Echo initialized${this.isIOS ? ' (iOS detected)' : ''}`, 'info');
+    }
+    
+    async initializeAudioContext() {
+        // Initialize audio context on first user interaction (required for iOS)
+        const initAudio = async () => {
+            if (!this.audioContextInitialized) {
+                try {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    this.audioContextInitialized = true;
+                    this.log('Audio context initialized', 'success');
+                } catch (error) {
+                    this.log(`Audio context init failed: ${error.message}`, 'error');
+                }
+            }
+        };
+        
+        // iOS requires user interaction to initialize audio
+        if (this.isIOS) {
+            document.body.addEventListener('touchstart', initAudio, { once: true });
+            document.body.addEventListener('click', initAudio, { once: true });
+        } else {
+            await initAudio();
+        }
     }
     
     setupEventListeners() {
-        // Bot buttons
+        // Bot buttons - use touchend for better iOS responsiveness
         document.querySelectorAll('.ai-button').forEach(button => {
-            button.addEventListener('click', (e) => this.handleBotClick(e));
+            // Prevent double-tap zoom on iOS
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+            
+            if (this.isIOS) {
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleBotClick(e);
+                }, { passive: false });
+            } else {
+                button.addEventListener('click', (e) => this.handleBotClick(e));
+            }
         });
         
         // Settings modal
@@ -120,18 +163,47 @@ class AphorismEcho {
     
     async startRecording(botId, button) {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                }
+            });
             
-            this.mediaRecorder = new MediaRecorder(stream);
+            // Determine best audio format for the device
+            let mimeType = 'audio/webm';
+            if (this.isIOS) {
+                // iOS Safari supports these formats
+                if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+                    mimeType = 'audio/wav';
+                }
+            } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                mimeType = 'audio/webm;codecs=opus';
+            }
+            
+            this.log(`Using MIME type: ${mimeType}`, 'info');
+            
+            const options = mimeType ? { mimeType } : {};
+            this.mediaRecorder = new MediaRecorder(stream, options);
             this.audioChunks = [];
             this.currentBot = botId;
             
             this.mediaRecorder.ondataavailable = (event) => {
-                this.audioChunks.push(event.data);
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
             };
             
             this.mediaRecorder.onstop = async () => {
                 await this.processRecording();
+            };
+            
+            this.mediaRecorder.onerror = (event) => {
+                this.log(`MediaRecorder error: ${event.error}`, 'error');
+                this.updateStatus(`Recording error: ${event.error}`);
             };
             
             this.mediaRecorder.start();
@@ -139,9 +211,10 @@ class AphorismEcho {
             
             button.classList.add('recording');
             this.updateStatus('Recording...');
+            this.log('Recording started', 'success');
             
         } catch (error) {
-            console.error('Error accessing microphone:', error);
+            this.log(`Error accessing microphone: ${error.message}`, 'error');
             this.updateStatus('Microphone access denied');
         }
     }
@@ -163,9 +236,13 @@ class AphorismEcho {
         try {
             this.log('Starting to process recording...', 'info');
             
+            // Determine the actual MIME type from recorded chunks
+            let mimeType = this.audioChunks[0]?.type || 'audio/wav';
+            this.log(`Audio blob type: ${mimeType}`, 'info');
+            
             // Convert audio to base64
-            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-            this.log(`Audio blob created: ${audioBlob.size} bytes`, 'info');
+            const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+            this.log(`Audio blob created: ${audioBlob.size} bytes, type: ${mimeType}`, 'info');
             
             const base64Audio = await this.blobToBase64(audioBlob);
             this.log('Audio converted to base64', 'info');
@@ -221,12 +298,26 @@ class AphorismEcho {
             }
             const byteArray = new Uint8Array(byteNumbers);
             
-            // Create blob with proper audio format - Whisper prefers mp3, m4a, mp4, mpeg, mpga, wav, or webm
-            const audioBlob = new Blob([byteArray], { type: 'audio/wav' });
+            // Detect format from base64 header and use appropriate extension
+            let fileExtension = 'wav';
+            let mimeType = 'audio/wav';
+            
+            if (base64Audio.includes('audio/mp4') || base64Audio.includes('audio/m4a')) {
+                mimeType = 'audio/mp4';
+                fileExtension = 'm4a';
+            } else if (base64Audio.includes('audio/webm')) {
+                mimeType = 'audio/webm';
+                fileExtension = 'webm';
+            }
+            
+            this.log(`Detected format: ${mimeType} (.${fileExtension})`, 'info');
+            
+            // Create blob with proper audio format - Whisper supports mp3, m4a, mp4, mpeg, mpga, wav, webm
+            const audioBlob = new Blob([byteArray], { type: mimeType });
             this.log(`Audio blob prepared: ${audioBlob.size} bytes, type: ${audioBlob.type}`, 'info');
             
             const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.wav');
+            formData.append('file', audioBlob, `audio.${fileExtension}`);
             formData.append('model', 'whisper-1');
             formData.append('response_format', 'json');
             
@@ -354,6 +445,18 @@ class AphorismEcho {
             const audioUrl = URL.createObjectURL(audioBlob);
             const audio = new Audio(audioUrl);
             
+            // iOS-specific optimizations
+            if (this.isIOS) {
+                // Enable inline playback on iOS
+                audio.setAttribute('playsinline', 'true');
+                audio.setAttribute('webkit-playsinline', 'true');
+                
+                // Ensure audio context is ready
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+            }
+            
             // Add comprehensive event listeners for debugging
             audio.addEventListener('loadstart', () => this.log('Audio: loadstart', 'info'));
             audio.addEventListener('durationchange', () => this.log(`Audio: durationchange ${audio.duration}`, 'info'));
@@ -386,12 +489,32 @@ class AphorismEcho {
             
             this.log('Attempting to play audio...', 'info');
             
-            // Wait for audio to be ready before playing
-            await new Promise((resolve, reject) => {
-                audio.addEventListener('canplaythrough', resolve, { once: true });
-                audio.addEventListener('error', reject, { once: true });
-                audio.load(); // Explicitly load the audio
+            // For iOS, load the audio explicitly first
+            audio.load();
+            
+            // Wait for audio to be ready before playing (with timeout for iOS)
+            const waitForReady = new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    this.log('Audio ready timeout, attempting to play anyway', 'info');
+                    resolve();
+                }, 3000);
+                
+                audio.addEventListener('canplaythrough', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                }, { once: true });
+                
+                audio.addEventListener('error', (e) => {
+                    clearTimeout(timeout);
+                    reject(e);
+                }, { once: true });
             });
+            
+            try {
+                await waitForReady;
+            } catch (e) {
+                throw new Error(`Audio loading failed: ${e.message}`);
+            }
             
             // Try to play with user interaction requirement handling
             const playPromise = audio.play();
@@ -405,27 +528,38 @@ class AphorismEcho {
                         this.log(`Audio play() failed: ${error.message}`, 'error');
                         
                         // Handle autoplay policy issues
-                        if (error.name === 'NotAllowedError') {
-                            this.updateStatus('Click anywhere to enable audio');
+                        if (error.name === 'NotAllowedError' || error.name === 'NotSupportedError') {
+                            this.updateStatus(this.isIOS ? 'Tap anywhere to play audio' : 'Click anywhere to enable audio');
                             this.log('Autoplay blocked - waiting for user interaction', 'info');
                             
-                            // Create a one-time click handler to enable audio
-                            const enableAudio = async () => {
+                            // Create a one-time interaction handler to enable audio
+                            const enableAudio = async (e) => {
                                 try {
+                                    // For iOS, ensure we're responding to the touch event
+                                    if (this.isIOS && this.audioContext && this.audioContext.state === 'suspended') {
+                                        await this.audioContext.resume();
+                                    }
                                     await audio.play();
                                     this.log('Audio started after user interaction', 'success');
+                                    this.updateStatus('Speaking...');
                                     document.removeEventListener('click', enableAudio);
+                                    document.removeEventListener('touchend', enableAudio);
                                 } catch (e) {
                                     this.log(`Still failed after user interaction: ${e.message}`, 'error');
                                     this.updateStatus('Audio playback failed');
                                     this.resetButtonState();
+                                    URL.revokeObjectURL(audioUrl);
                                 }
                             };
                             
                             document.addEventListener('click', enableAudio, { once: true });
+                            if (this.isIOS) {
+                                document.addEventListener('touchend', enableAudio, { once: true });
+                            }
                         } else {
                             this.updateStatus(`Audio error: ${error.message}`);
                             this.resetButtonState();
+                            URL.revokeObjectURL(audioUrl);
                         }
                     });
             }
