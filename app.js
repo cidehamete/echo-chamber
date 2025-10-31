@@ -52,17 +52,34 @@ class AphorismEcho {
     }
     
     setupEventListeners() {
-        // Bot buttons - simple tap handling
+        // Bot buttons - simple tap handling with visual feedback
         document.querySelectorAll('.ai-button').forEach(button => {
-            // Prevent double-tap zoom on iOS
+            // Add pressed state on touch start
             button.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                button.classList.add('pressed');
             }, { passive: false });
             
-            // Use click event for both mobile and desktop - works reliably on iOS
-            button.addEventListener('click', (e) => {
+            // Remove pressed state and handle click
+            button.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                setTimeout(() => button.classList.remove('pressed'), 150);
                 this.handleBotClick(e);
+            }, { passive: false });
+            
+            // Also handle regular clicks for desktop
+            button.addEventListener('click', (e) => {
+                if (!this.isIOS) {
+                    e.preventDefault();
+                    button.classList.add('pressed');
+                    setTimeout(() => button.classList.remove('pressed'), 150);
+                    this.handleBotClick(e);
+                }
+            });
+            
+            // Clean up pressed state if touch is cancelled
+            button.addEventListener('touchcancel', (e) => {
+                button.classList.remove('pressed');
             });
         });
         
