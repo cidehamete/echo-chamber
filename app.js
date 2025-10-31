@@ -52,31 +52,17 @@ class AphorismEcho {
     }
     
     setupEventListeners() {
-        // Bot buttons - use touchend for better iOS responsiveness
+        // Bot buttons - simple tap handling
         document.querySelectorAll('.ai-button').forEach(button => {
             // Prevent double-tap zoom on iOS
             button.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                // Add immediate visual feedback
-                button.classList.add('pressed');
             }, { passive: false });
             
-            if (this.isIOS) {
-                button.addEventListener('touchend', async (e) => {
-                    e.preventDefault();
-                    // Keep visual feedback for a moment before handling click
-                    await this.handleBotClickWithFeedback(e, button);
-                }, { passive: false });
-            } else {
-                button.addEventListener('click', async (e) => {
-                    button.classList.add('pressed');
-                    await this.handleBotClickWithFeedback(e, button);
-                });
-            }
-            
-            // Remove pressed state if touch is cancelled
-            button.addEventListener('touchcancel', (e) => {
-                button.classList.remove('pressed');
+            // Use click event for both mobile and desktop - works reliably on iOS
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleBotClick(e);
             });
         });
         
@@ -159,35 +145,16 @@ class AphorismEcho {
         }
     }
     
-    async handleBotClickWithFeedback(event, button) {
-        // Ensure visual feedback is visible for at least 200ms
-        const feedbackDelay = 200;
-        const startTime = Date.now();
-        
-        await this.handleBotClick(event);
-        
-        const elapsed = Date.now() - startTime;
-        if (elapsed < feedbackDelay) {
-            await new Promise(resolve => setTimeout(resolve, feedbackDelay - elapsed));
-        }
-        
-        button.classList.remove('pressed');
-    }
-    
-    async handleBotClick(event) {
+    handleBotClick(event) {
         const button = event.currentTarget;
         const botId = button.dataset.bot;
         
         if (this.isRecording && this.currentBot === botId) {
-            // Stop recording with visual feedback
-            this.updateStatus('Finishing recording...');
-            await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause for feedback
-            await this.stopRecording();
+            // Stop recording immediately
+            this.stopRecording();
         } else if (!this.isRecording) {
-            // Start recording with visual feedback
-            this.updateStatus('Preparing to record...');
-            await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause for feedback
-            await this.startRecording(botId, button);
+            // Start recording immediately
+            this.startRecording(botId, button);
         }
     }
     

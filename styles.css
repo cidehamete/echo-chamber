@@ -27,9 +27,6 @@ body {
     color: #333;
     /* Prevent overscroll bounce on iOS */
     overscroll-behavior: none;
-    /* Prevent pull-to-refresh on iOS */
-    overflow: hidden;
-    position: relative;
 }
 
 html {
@@ -42,11 +39,6 @@ html {
     max-width: 600px;
     padding: 20px;
     text-align: center;
-    /* Allow scrolling within container on iOS */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    max-height: 100vh;
-    max-height: -webkit-fill-available;
 }
 
 header {
@@ -384,30 +376,80 @@ h1 {
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        padding: 10px;
         /* Account for iOS safe area insets */
-        padding-top: max(15px, env(safe-area-inset-top));
-        padding-bottom: max(15px, env(safe-area-inset-bottom));
-        padding-left: max(15px, env(safe-area-inset-left));
-        padding-right: max(15px, env(safe-area-inset-right));
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-height: 100vh;
+        max-height: -webkit-fill-available;
+        overflow: hidden;
+    }
+    
+    /* Hide debug section on mobile to save space */
+    .debug-section {
+        display: none;
+    }
+    
+    header {
+        margin-bottom: 15px;
+        flex-shrink: 0;
     }
     
     h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    .status {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        margin-bottom: 5px;
+    }
+    
+    .archive-counter {
+        font-size: 0.75rem;
+        padding: 3px 10px;
     }
     
     .button-grid {
-        gap: 15px;
+        gap: 10px;
+        flex-shrink: 0;
     }
     
     .ai-button {
-        padding: 25px 15px;
-        /* Larger touch targets for iOS */
-        min-height: 120px;
+        padding: 15px 10px;
+        /* Smaller buttons to fit all 4 on screen */
+        min-height: auto;
     }
     
     .button-number {
-        font-size: 2.5rem;
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+    
+    .button-label {
+        font-size: 0.85rem;
+    }
+    
+    footer {
+        margin-top: 10px;
+        flex-shrink: 0;
+    }
+    
+    footer button {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        margin-left: 5px !important;
+    }
+    
+    .settings-toggle {
+        font-size: 0.75rem;
+        padding: 6px 12px;
     }
     
     .modal {
@@ -445,19 +487,26 @@ h1 {
 }
 
 @media (max-width: 480px) {
+    /* Keep 2x2 grid even on small screens */
     .button-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 8px;
     }
     
     .ai-button {
-        padding: 30px 20px;
-        /* Even larger touch target on small iOS devices */
-        min-height: 140px;
+        padding: 12px 8px;
     }
     
     .button-number {
-        font-size: 3rem;
+        font-size: 1.75rem;
+        margin-bottom: 3px;
+    }
+    
+    .button-label {
+        font-size: 0.75rem;
+    }
+    
+    h1 {
+        font-size: 1.25rem;
     }
 }
 
