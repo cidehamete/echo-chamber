@@ -54,33 +54,46 @@ class AphorismEcho {
     setupEventListeners() {
         // Bot buttons - simple tap handling with visual feedback
         document.querySelectorAll('.ai-button').forEach(button => {
-            // Add pressed state on touch start
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                button.classList.add('pressed');
-            }, { passive: false });
-            
-            // Remove pressed state and handle click
-            button.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                setTimeout(() => button.classList.remove('pressed'), 150);
-                this.handleBotClick(e);
-            }, { passive: false });
-            
-            // Also handle regular clicks for desktop
-            button.addEventListener('click', (e) => {
-                if (!this.isIOS) {
+            if (this.isIOS) {
+                // iOS touch handling
+                button.addEventListener('touchstart', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     button.classList.add('pressed');
-                    setTimeout(() => button.classList.remove('pressed'), 150);
+                    this.log(`Button ${button.dataset.bot} pressed`, 'info');
+                }, { passive: false });
+                
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.log(`Button ${button.dataset.bot} released`, 'info');
+                    
+                    // Keep pressed state briefly, then handle action
+                    setTimeout(() => {
+                        button.classList.remove('pressed');
+                        this.handleBotClick(e);
+                    }, 100);
+                }, { passive: false });
+                
+                button.addEventListener('touchcancel', (e) => {
+                    button.classList.remove('pressed');
+                    this.log(`Button ${button.dataset.bot} cancelled`, 'info');
+                });
+            } else {
+                // Desktop click handling
+                button.addEventListener('mousedown', (e) => {
+                    button.classList.add('pressed');
+                });
+                
+                button.addEventListener('mouseup', (e) => {
+                    button.classList.remove('pressed');
+                });
+                
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
                     this.handleBotClick(e);
-                }
-            });
-            
-            // Clean up pressed state if touch is cancelled
-            button.addEventListener('touchcancel', (e) => {
-                button.classList.remove('pressed');
-            });
+                });
+            }
         });
         
         // Settings modal
