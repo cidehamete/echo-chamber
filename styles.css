@@ -221,20 +221,29 @@ h1 {
     top: 0;
     width: 100%;
     height: 100%;
+    /* Use actual viewport height for iOS */
+    height: 100vh;
+    height: -webkit-fill-available;
     background-color: rgba(0,0,0,0.5);
     backdrop-filter: blur(5px);
+    /* Enable scrolling on iOS */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-content {
     background-color: white;
-    margin: 5% auto;
+    margin: 5% auto 5% auto;
     padding: 0;
     border-radius: 20px;
     width: 90%;
     max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
+    /* Remove max-height from content, let modal handle scrolling */
+    max-height: none;
+    overflow: visible;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    /* Ensure content is visible on iOS */
+    position: relative;
 }
 
 .modal-header {
@@ -270,6 +279,8 @@ h1 {
 
 .modal-body {
     padding: 30px;
+    /* Ensure content is scrollable */
+    overflow: visible;
 }
 
 .settings-section {
@@ -399,15 +410,24 @@ h1 {
         font-size: 2.5rem;
     }
     
+    .modal {
+        /* Ensure modal takes full height on mobile */
+        padding: 20px 0;
+    }
+    
     .modal-content {
-        margin: 10% auto;
+        margin: 20px auto;
         width: 95%;
-        /* iOS safe area support */
-        margin-top: max(10%, env(safe-area-inset-top, 10%));
+        /* Allow content to expand naturally */
+        min-height: auto;
+        /* Add margin at bottom for iOS safe area */
+        margin-bottom: max(20px, env(safe-area-inset-bottom, 20px));
     }
     
     .modal-body {
         padding: 20px;
+        /* Ensure all content is visible */
+        max-height: none;
     }
     
     .modal-footer {
@@ -459,6 +479,18 @@ h1 {
         /* Fix for iOS button rendering issues */
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
+    }
+    
+    .modal {
+        /* Fix iOS Safari scrolling in modal */
+        -webkit-overflow-scrolling: touch;
+        /* Prevent body scroll when modal is open */
+        overscroll-behavior: contain;
+    }
+    
+    .modal-content {
+        /* Ensure content expands to show all elements */
+        min-height: min-content;
     }
 }
 

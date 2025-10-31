@@ -626,11 +626,28 @@ class AphorismEcho {
     // Settings Management
     openSettings() {
         this.loadSettingsToForm();
-        document.getElementById('settingsModal').style.display = 'block';
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'block';
+        
+        // Prevent body scroll on iOS when modal is open
+        if (this.isIOS) {
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+            // Scroll modal to top
+            modal.scrollTop = 0;
+        }
     }
     
     closeSettings() {
         document.getElementById('settingsModal').style.display = 'none';
+        
+        // Restore body scroll on iOS
+        if (this.isIOS) {
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+        }
     }
     
     loadSettingsToForm() {
